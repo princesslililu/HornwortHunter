@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hornwort Hunter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5e6d3 0%, #d4a574 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4a2c2a;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .game-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #animalInput {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        #animalInput:focus {
+            border-color: #6b4423;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            background: #6b4423;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #4a2c2a;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .suggestions {
+            border: 2px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            background: white;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .suggestion-item:hover {
+            background: #f0f0f0;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #6b4423;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        #tree-container {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            min-height: 500px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .new-game-btn {
+            margin-top: 15px;
+        }
+
+        .node-text {
+            font-family: monospace;
+            font-weight: bold;
+            user-select: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌱 Hornwort Hunter</h1>
+            <p class="subtitle">Guess the Mystery Hornwort!</p>
+        </header>
+
+        <div class="game-info">
+            <div id="message" class="message"></div>
+            <p><strong>How to Play:</strong> Guess species to narrow down the mystery organism. Watch the tree reveal relationships!</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="guessCount">0</div>
+                    <div class="stat-label">Guesses</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="speciesCount">15</div>
+                    <div class="stat-label">Total Species</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="animalInput" 
+                    placeholder="Type an organism name (e.g., 'Anthoceros agrestis')..."
+                    autocomplete="off"
+                >
+                <button id="guessBtn">Guess</button>
+            </div>
+            <div id="suggestions" class="suggestions"></div>
+            <button id="newGameBtn" class="new-game-btn" style="display: none;">New Game</button>
+        </div>
+
+        <div id="tree-container"></div>
+    </div>
+
+    <script>
+    const taxonomyDB = {
+        "Anthoceros agrestis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "agrestis"},
+        "Anthoceros punctatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "punctatus"},
+        "Anthoceros caucasicus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "caucasicus"},
+        "Anthoceros fusiformis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "fusiformis"},
+        "Anthoceros lamellatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "lamellatus"},
+        "Anthoceros tuberculatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "tuberculatus"},
+        "Anthoceros crispulus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "crispulus"},
+        "Anthoceros angustus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "angustus"},
+        "Anthoceros subtilis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "subtilis"},
+        "Anthoceros himalayensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "himalayensis"},
+        "Anthoceros bharadwajii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "bharadwajii"},
+        "Phymatoceros bulbiculosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Phymatoceros", species: "bulbiculosus"},
+        "Phymatoceros phymatodes": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Phymatoceros", species: "phymatodes"},
+        "Notothylas orbicularis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "orbicularis"},
+        "Notothylas temperata": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "temperata"},
+        "Notothylas melanospora": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "melanospora"},
+        "Notothylas levieri": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "levieri"},
+        "Phaeoceros laevis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Phaeoceros", species: "laevis"},
+        "Phaeoceros carolinianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Phaeoceros", species: "carolinianus"},
+        "Phaeoceros pearsonii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Phaeoceros", species: "pearsonii"},
+        "Phaeoceros bulbiculosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Phaeoceros", species: "bulbiculosus"},
+        "Phaeoceros oreganus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Phaeoceros", species: "oreganus"},
+        "Megaceros flagellaris": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "flagellaris"},
+        "Megaceros vincentianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "vincentianus"},
+        "Megaceros gracilis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "gracilis"},
+        "Dendroceros crispus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "crispus"},
+        "Dendroceros tubercularis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "tubercularis"},
+        "Dendroceros javanicus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "javanicus"},
+        "Dendroceros granulatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "granulatus"},
+        "Phaeomegaceros fimbriatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "fimbriatus"},
+        "Phaeomegaceros hirticalyx": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "hirticalyx"},
+        "Nothoceros aenigmaticus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "aenigmaticus"},
+        "Nothoceros vincentianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "vincentianus"},
+        "Leiosporoceros dussii": {phylum: "Anthocerotophyta", class: "Leiosporocerotopsida", order: "Leiosporocerotales", family: "Leiosporocerotaceae", genus: "Leiosporoceros", species: "dussii"},
+        "Folioceros fuciformis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "fuciformis"},
+        "Folioceros appendiculatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "appendiculatus"},
+        "Sphaerosporoceros texanus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Sphaerosporoceros", species: "texanus"},
+        "Paraphymatoceros hallii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Paraphymatoceros", species: "hallii"},
+        "Mesoceros schaeferi": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Mesoceros", species: "schaeferi"}
+    };
+
+    let mysteryAnimal = "";
+    let guesses = [];
+    let gameWon = false;
+
+    const COLORS = {
+        phylum: 'rgb(139, 69, 19)',
+        class: 'rgb(184, 134, 11)',
+        order: 'rgb(205, 133, 63)',
+        family: 'rgb(218, 165, 32)',
+        genus: 'rgb(107, 142, 35)',
+        species: 'rgb(46, 139, 87)',
+        mystery: 'rgb(255, 215, 0)',
+        guess: 'rgb(255, 255, 255)',
+        line: 'rgb(107, 68, 35)'
+    };
+
+    function initGame() {
+        const animals = Object.keys(taxonomyDB);
+        mysteryAnimal = animals[Math.floor(Math.random() * animals.length)];
+        guesses = [];
+        gameWon = false;
+        document.getElementById('guessCount').textContent = '0';
+        document.getElementById('speciesCount').textContent = Object.keys(taxonomyDB).length;
+        document.getElementById('message').style.display = 'none';
+        document.getElementById('newGameBtn').style.display = 'none';
+        document.getElementById('guessBtn').disabled = false;
+        document.getElementById('animalInput').disabled = false;
+        document.getElementById('animalInput').value = '';
+        renderTree();
+        console.log("Mystery:", mysteryAnimal);
+    }
+
+    function findCommonRank(sp1, sp2) {
+        const tax1 = taxonomyDB[sp1];
+        const tax2 = taxonomyDB[sp2];
+        const ranks = ['genus', 'family', 'order', 'class', 'phylum'];
+        
+        for (let rank of ranks) {
+            if (tax1[rank] === tax2[rank]) {
+                return rank;
+            }
+        }
+        return null;
+    }
+
+    function buildTreeData() {
+        // Collect all species (mystery + all guesses)
+        const allSpecies = [];
+        
+        // Add mystery species
+        allSpecies.push({
+            name: gameWon ? mysteryAnimal : "??? Mystery Species ???",
+            displayName: gameWon ? mysteryAnimal : "??? Mystery Species ???",
+            rank: gameWon ? "species" : "mystery",
+            isMystery: !gameWon,
+            isAnswer: gameWon,
+            taxonomy: taxonomyDB[mysteryAnimal]
+        });
+        
+        // Add all guesses
+        guesses.forEach(guess => {
+            if (guess !== mysteryAnimal) {
+                allSpecies.push({
+                    name: guess,
+                    displayName: guess,
+                    rank: "guess",
+                    isGuess: true,
+                    taxonomy: taxonomyDB[guess]
+                });
+            }
+        });
+
+        // If only mystery species, show it alone
+        if (allSpecies.length === 1) {
+            return {
+                name: allSpecies[0].displayName,
+                rank: allSpecies[0].rank,
+                isMystery: allSpecies[0].isMystery,
+                children: []
+            };
+        }
+
+        // Find the lowest common ancestor of ALL species
+        const lca = findLowestCommonAncestor(allSpecies);
+        
+        // Build tree from the LCA
+        const tree = {
+            name: lca.value,
+            rank: lca.rank,
+            children: []
+        };
+
+        // Recursively build the tree
+        buildTreeRecursive(tree, allSpecies, lca.rank);
+
+        return tree;
+    }
+
+    function findLowestCommonAncestor(species) {
+        const ranks = ['phylum', 'class', 'order', 'family', 'genus'];
+        
+        // Start from the deepest rank and work up
+        for (let i = ranks.length - 1; i >= 0; i--) {
+            const rank = ranks[i];
+            const value = species[0].taxonomy[rank];
+            
+            // Check if ALL species share this rank value
+            const allShare = species.every(sp => sp.taxonomy[rank] === value);
+            
+            if (allShare) {
+                return { rank: rank, value: value };
+            }
+        }
+        
+        // Fallback to phylum (they should all share this)
+        return { rank: 'phylum', value: species[0].taxonomy.phylum };
+    }
+
+    function buildTreeRecursive(parentNode, species, currentRank) {
+        const ranks = ['phylum', 'class', 'order', 'family', 'genus'];
+        const currentIndex = ranks.indexOf(currentRank);
+        
+        // If only one species, add it directly as a leaf (no intermediate ranks)
+        if (species.length === 1) {
+            const sp = species[0];
+            parentNode.children.push({
+                name: sp.displayName,
+                rank: sp.rank,
+                isMystery: sp.isMystery,
+                isAnswer: sp.isAnswer,
+                isGuess: sp.isGuess
+            });
+            return;
+        }
+        
+        // If we're at genus level, add all species as leaves
+        if (currentIndex >= ranks.length - 1) {
+            species.forEach(sp => {
+                parentNode.children.push({
+                    name: sp.displayName,
+                    rank: sp.rank,
+                    isMystery: sp.isMystery,
+                    isAnswer: sp.isAnswer,
+                    isGuess: sp.isGuess
+                });
+            });
+            return;
+        }
+        
+        // Group by next rank down
+        const nextRank = ranks[currentIndex + 1];
+        const groups = new Map();
+        
+        species.forEach(sp => {
+            const key = sp.taxonomy[nextRank];
+            if (!groups.has(key)) {
+                groups.set(key, []);
+            }
+            groups.get(key).push(sp);
+        });
+        
+        // Build a branch for each group
+        groups.forEach((groupSpecies, groupName) => {
+            if (groupSpecies.length === 1) {
+                // Single species in this group - add it directly as a leaf (skip intermediate rank)
+                const sp = groupSpecies[0];
+                parentNode.children.push({
+                    name: sp.displayName,
+                    rank: sp.rank,
+                    isMystery: sp.isMystery,
+                    isAnswer: sp.isAnswer,
+                    isGuess: sp.isGuess
+                });
+            } else {
+                // Multiple species - create intermediate node
+                const groupNode = {
+                    name: groupName,
+                    rank: nextRank,
+                    children: []
+                };
+                
+                // Recursively build this branch
+                buildTreeRecursive(groupNode, groupSpecies, nextRank);
+                
+                parentNode.children.push(groupNode);
+            }
+        });
+    }
+
+    function renderTree() {
+        const tree = buildTreeData();
+        const svg = createSVGTree(tree);
+        document.getElementById('tree-container').innerHTML = '';
+        document.getElementById('tree-container').appendChild(svg);
+    }
+
+    function createSVGTree(tree) {
+        // First, calculate the tree layout
+        const layout = calculateTreeLayout(tree);
+        
+        // Determine SVG dimensions based on layout
+        const width = Math.max(800, layout.maxX + 100);
+        const height = Math.max(600, layout.maxY + 100);
+        
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', height);
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.setAttribute('preserveAspectRatio', 'xMinYMid meet');
+
+        // Draw the tree using the calculated layout
+        drawTreeWithLayout(svg, tree, layout.nodes);
+
+        return svg;
+    }
+
+    function calculateTreeLayout(tree, depth = 0, startY = 0) {
+        const nodeSpacing = 60;
+        const depthSpacing = 250;
+        const nodes = [];
+        
+        function traverse(node, depth, y) {
+            const x = 100 + (depth * depthSpacing);
+            
+            if (!node.children || node.children.length === 0) {
+                // Leaf node
+                nodes.push({ node, x, y, depth });
+                return { y: y, height: nodeSpacing };
+            }
+            
+            // Internal node - calculate children first
+            let currentY = y;
+            const childPositions = [];
+            
+            node.children.forEach(child => {
+                const result = traverse(child, depth + 1, currentY);
+                childPositions.push(currentY);
+                currentY = result.y + result.height;
+            });
+            
+            // Position this node at the midpoint of its children
+            const midY = (childPositions[0] + childPositions[childPositions.length - 1]) / 2;
+            nodes.push({ node, x, y: midY, depth, childYs: childPositions });
+            
+            return { y: y, height: currentY - y };
+        }
+        
+        const result = traverse(tree, 0, 50);
+        
+        // Find max X and Y for SVG sizing
+        const maxX = Math.max(...nodes.map(n => n.x + 200));
+        const maxY = Math.max(...nodes.map(n => n.y + 50));
+        
+        return { nodes, maxX, maxY };
+    }
+
+    function drawTreeWithLayout(svg, tree, layoutNodes) {
+        const nodeMap = new Map();
+        
+        // Create a map of nodes for easy lookup
+        function mapNodes(node, layoutNode) {
+            nodeMap.set(node, layoutNode);
+            if (node.children && layoutNode.childYs) {
+                node.children.forEach((child, i) => {
+                    const childLayout = layoutNodes.find(n => 
+                        n.node === child && n.depth === layoutNode.depth + 1
+                    );
+                    if (childLayout) {
+                        mapNodes(child, childLayout);
+                    }
+                });
+            }
+        }
+        
+        const rootLayout = layoutNodes.find(n => n.depth === 0);
+        mapNodes(tree, rootLayout);
+        
+        // Draw connections first (so they appear behind nodes)
+        function drawConnections(node) {
+            const nodeLayout = nodeMap.get(node);
+            if (!node.children || node.children.length === 0) return;
+            
+            const x1 = nodeLayout.x + 150; // Right edge of parent node
+            const y1 = nodeLayout.y;
+            
+            // Draw vertical line connecting all children
+            if (node.children.length > 1) {
+                const firstChild = nodeMap.get(node.children[0]);
+                const lastChild = nodeMap.get(node.children[node.children.length - 1]);
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', firstChild.y);
+                line.setAttribute('x2', x1);
+                line.setAttribute('y2', lastChild.y);
+                line.setAttribute('stroke', COLORS.line);
+                line.setAttribute('stroke-width', '2');
+                svg.appendChild(line);
+            }
+            
+            // Draw horizontal lines to each child
+            node.children.forEach(child => {
+                const childLayout = nodeMap.get(child);
+                const x2 = childLayout.x - 10; // Left edge of child node
+                const y2 = childLayout.y;
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', node.children.length > 1 ? y2 : y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', COLORS.line);
+                line.setAttribute('stroke-width', '2');
+                svg.appendChild(line);
+                
+                // Recurse
+                drawConnections(child);
+            });
+        }
+        
+        drawConnections(tree);
+        
+        // Draw nodes
+        layoutNodes.forEach(({ node, x, y }) => {
+            drawNode(svg, node.name, node.rank, x, y, node.isMystery, node.isAnswer);
+        });
+    }
+
+    function drawNode(svg, text, rank, x, y, isMystery = false, isAnswer = false) {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+        // Determine colors and styles
+        let fillColor = COLORS[rank] || COLORS.guess;
+        let strokeColor = fillColor;
+        let textColor = 'white';
+        let strokeWidth = 1;
+        let isDashed = false;
+
+        if (isMystery) {
+            fillColor = COLORS.mystery;
+            strokeColor = 'rgb(255, 107, 107)';
+            textColor = '#333';
+            strokeWidth = 3;
+            isDashed = true;
+        } else if (rank === 'guess') {
+            fillColor = 'white';
+            textColor = '#333';
+            strokeColor = '#666';
+            strokeWidth = 2;
+        } else if (isAnswer) {
+            fillColor = COLORS.species;
+            textColor = 'white';
+        }
+
+        // Create rect
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        const padding = 10;
+        const textWidth = text.length * 8;
+        const rectWidth = Math.max(textWidth + padding * 2, 100);
+        const rectHeight = 30;
+
+        rect.setAttribute('x', x);
+        rect.setAttribute('y', y - rectHeight / 2);
+        rect.setAttribute('width', rectWidth);
+        rect.setAttribute('height', rectHeight);
+        rect.setAttribute('rx', 5);
+        rect.setAttribute('fill', fillColor);
+        rect.setAttribute('stroke', strokeColor);
+        rect.setAttribute('stroke-width', strokeWidth);
+        if (isDashed) {
+            rect.setAttribute('stroke-dasharray', '5,5');
+        }
+        rect.setAttribute('filter', 'drop-shadow(2px 3px 2px rgb(0 0 0 / 0.2))');
+
+        g.appendChild(rect);
+
+        // Create text
+        const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textEl.setAttribute('x', x + rectWidth / 2);
+        textEl.setAttribute('y', y + 5);
+        textEl.setAttribute('text-anchor', 'middle');
+        textEl.setAttribute('fill', textColor);
+        textEl.setAttribute('class', 'node-text');
+        textEl.setAttribute('font-size', '14');
+        if (isMystery) {
+            textEl.setAttribute('font-style', 'italic');
+        }
+        textEl.textContent = text;
+
+        g.appendChild(textEl);
+        svg.appendChild(g);
+    }
+
+    function showMessage(text, type) {
+        const msg = document.getElementById('message');
+        msg.textContent = text;
+        msg.className = 'message ' + type;
+        msg.style.display = 'block';
+        if (type === 'error') {
+            setTimeout(() => {msg.style.display = 'none';}, 3000);
+        }
+    }
+
+    function makeGuess() {
+        const input = document.getElementById('animalInput').value.trim();
+        if (!input) {
+            showMessage('Please enter an organism name', 'error');
+            return;
+        }
+        if (!taxonomyDB[input]) {
+            showMessage('Organism not found. Please select from suggestions.', 'error');
+            return;
+        }
+        if (guesses.includes(input)) {
+            showMessage('You already guessed that!', 'error');
+            return;
+        }
+        
+        guesses.push(input);
+        document.getElementById('guessCount').textContent = guesses.length;
+        document.getElementById('animalInput').value = '';
+        document.getElementById('suggestions').style.display = 'none';
+        
+        if (input === mysteryAnimal) {
+            gameWon = true;
+            showMessage('🎉 Congratulations! You found ' + mysteryAnimal + ' in ' + guesses.length + ' guesses!', 'success');
+            document.getElementById('guessBtn').disabled = true;
+            document.getElementById('animalInput').disabled = true;
+            document.getElementById('newGameBtn').style.display = 'block';
+        } else {
+            const common = findCommonRank(input, mysteryAnimal);
+            if (common) {
+                showMessage('Not quite! Your guess shares the same ' + common + ' with the mystery organism.', 'error');
+            } else {
+                showMessage('Not quite! Keep guessing...', 'error');
+            }
+        }
+        
+        renderTree();
+    }
+
+    function updateSuggestions() {
+    const input = document.getElementById('animalInput').value.trim().toLowerCase();
+    const suggestionsDiv = document.getElementById('suggestions');
+    if (input.length < 2) {
+        suggestionsDiv.style.display = 'none';
+        return;
+    }
+    
+    // Filter out species that have already been guessed
+    const matches = Object.keys(taxonomyDB).filter(name => 
+        name.toLowerCase().includes(input) && !guesses.includes(name)
+    );
+    
+    if (matches.length > 0) {
+        suggestionsDiv.innerHTML = matches.map(name => 
+            '<div class="suggestion-item" onclick="selectSuggestion(\'' + name.replace(/'/g, "\\'") + '\')">' + name + '</div>'
+        ).join('');
+        suggestionsDiv.style.display = 'block';
+    } else {
+        suggestionsDiv.style.display = 'none';
+    }
+}
+
+    function selectSuggestion(name) {
+        document.getElementById('animalInput').value = name;
+        document.getElementById('suggestions').style.display = 'none';
+    }
+
+    document.getElementById('guessBtn').addEventListener('click', makeGuess);
+    document.getElementById('animalInput').addEventListener('input', updateSuggestions);
+    document.getElementById('animalInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') makeGuess();
+    });
+    document.getElementById('newGameBtn').addEventListener('click', initGame);
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.input-section')) {
+            document.getElementById('suggestions').style.display = 'none';
+        }
+    });
+
+    initGame();
+</script>
