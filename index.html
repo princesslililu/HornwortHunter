@@ -95,6 +95,40 @@
             cursor: not-allowed;
         }
 
+        .hint-btn {
+            background: #d4a574;
+            margin-left: 10px;
+        }
+
+        .hint-btn:hover:not(:disabled) {
+            background: #b8935f;
+        }
+
+        .hint-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .hint-box.show {
+            display: block;
+        }
+
+        .hint-box h3 {
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .hint-box p {
+            color: #856404;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+
         .suggestions {
             border: 2px solid #ddd;
             border-top: none;
@@ -180,6 +214,60 @@
             user-select: none;
             pointer-events: none;
         }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .seed-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .seed-section label {
+            display: block;
+            margin-bottom: 10px;
+            color: #4a2c2a;
+            font-weight: bold;
+        }
+
+        .seed-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #regionSelect {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            background: white;
+            color: #333;
+        }
+
+        #regionSelect:focus {
+            border-color: #6b4423;
+        }
+
+        .seed-btn {
+            background: #2e8b57;
+        }
+
+        .seed-btn:hover {
+            background: #246b44;
+        }
+
+        .seed-note {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #888;
+        }
     </style>
 </head>
 <body>
@@ -204,6 +292,15 @@
             </div>
         </div>
 
+        <div class="seed-section">
+            <label for="regionSelect">🌍 Seed a mystery hornwort from a region:</label>
+            <div class="seed-container">
+                <select id="regionSelect"></select>
+                <button id="seedBtn" class="seed-btn">Seed New Game</button>
+            </div>
+            <p class="seed-note" id="seedNote"></p>
+        </div>
+
         <div class="input-section">
             <div class="search-container">
                 <input 
@@ -212,9 +309,18 @@
                     placeholder="Type an organism name (e.g., 'Anthoceros agrestis')..."
                     autocomplete="off"
                 >
-                <button id="guessBtn">Guess</button>
+                <div class="button-group">
+                    <button id="guessBtn">Guess</button>
+                    <button id="hintBtn" class="hint-btn">💡 Hint</button>
+                </div>
             </div>
             <div id="suggestions" class="suggestions"></div>
+            
+            <div id="hintBox" class="hint-box">
+                <h3>📍 Geographic Hint</h3>
+                <p id="hintText"></p>
+            </div>
+            
             <button id="newGameBtn" class="new-game-btn" style="display: none;">New Game</button>
         </div>
 
@@ -225,107 +331,160 @@
     const taxonomyDB = {
        
     // Genus Anthoceros (17 species)
-    "Anthoceros tuberculatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "tuberculatus"},
-    "Anthoceros erectus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "erectus"},
-    "Anthoceros lamellatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "lamellatus"},
-    "Anthoceros fusiformis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "fusiformis"},
-    "Anthoceros agrestis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "agrestis"},
-    "Anthoceros punctatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "punctatus"},
-    "Anthoceros laminiferus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "laminiferus"},
-    "Anthoceros subtilis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "subtilis"},
-    "Anthoceros macounii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "macounii"},
-    "Anthoceros bharadwajii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "bharadwajii"},
-    "Anthoceros tristanianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "tristanianus"},
-    "Anthoceros neesii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "neesii"},
-    "Anthoceros caucasicus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "caucasicus"},
-    "Anthoceros schroederi": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "schroederi"},
-    "Anthoceros telaganus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "telaganus"},
-    "Anthoceros alpinus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "alpinus"},
-    "Anthoceros angustus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "angustus"},
+    "Anthoceros tuberculatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "tuberculatus", location: "Europe, North America, temperate regions"},
+    "Anthoceros erectus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "erectus", location: "Tropical and subtropical Asia"},
+    "Anthoceros lamellatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "lamellatus", location: "India, Southeast Asia"},
+    "Anthoceros fusiformis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "fusiformis", location: "India, tropical Asia"},
+    "Anthoceros agrestis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "agrestis", location: "Europe, North America, widespread in temperate zones"},
+    "Anthoceros punctatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "punctatus", location: "Cosmopolitan, widespread globally"},
+    "Anthoceros laminiferus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "laminiferus", location: "Southeast Asia"},
+    "Anthoceros subtilis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "subtilis", location: "India"},
+    "Anthoceros macounii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "macounii", location: "North America"},
+    "Anthoceros bharadwajii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "bharadwajii", location: "India"},
+    "Anthoceros tristanianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "tristanianus", location: "Tristan da Cunha islands, South Atlantic"},
+    "Anthoceros neesii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "neesii", location: "Europe"},
+    "Anthoceros caucasicus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "caucasicus", location: "Caucasus region"},
+    "Anthoceros schroederi": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "schroederi", location: "Southeast Asia"},
+    "Anthoceros telaganus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "telaganus", location: "India"},
+    "Anthoceros alpinus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "alpinus", location: "Garhwal Himalaya, Uttarakhand, India (also Yunnan, China); critically endangered"},
+    "Anthoceros angustus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Anthoceros", species: "angustus", location: "India, tropical Asia"},
     
     // Genus Folioceros (6 species)
-    "Folioceros fuciformis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "fuciformis"},
-    "Folioceros amboinensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "amboinensis"},
-    "Folioceros argillaceus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "argillaceus"},
-    "Folioceros pinnatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "pinnatus"},
-    "Folioceros kashyapii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "kashyapii"},
-    "Folioceros glandulosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "glandulosus"},
+    "Folioceros fuciformis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "fuciformis", location: "Tropical Asia, Southeast Asia"},
+    "Folioceros amboinensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "amboinensis", location: "Indonesia (Ambon)"},
+    "Folioceros argillaceus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "argillaceus", location: "India, tropical regions"},
+    "Folioceros pinnatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "pinnatus", location: "India"},
+    "Folioceros kashyapii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "kashyapii", location: "India"},
+    "Folioceros glandulosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Anthocerotales", family: "Anthocerotaceae", genus: "Folioceros", species: "glandulosus", location: "Tropical Asia"},
     
     // Genus Dendroceros (10 species)
-    "Dendroceros acutilobus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "acutilobus"},
-    "Dendroceros cichoriaceus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "cichoriaceus"},
-    "Dendroceros crispatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "crispatus"},
-    "Dendroceros crispus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "crispus"},
-    "Dendroceros granulatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "granulatus"},
-    "Dendroceros javanicus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "javanicus"},
-    "Dendroceros cavernosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "cavernosus"},
-    "Dendroceros cucullatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "cucullatus"},
-    "Dendroceros tubercularis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "tubercularis"},
-    "Dendroceros subplanus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "subplanus"},
+    "Dendroceros acutilobus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "acutilobus", location: "Indonesia (Ambon), Papua New Guinea"},
+    "Dendroceros cichoriaceus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "cichoriaceus", location: "Tropical Asia, Pacific islands"},
+    "Dendroceros crispatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "crispatus", location: "Tropical America"},
+    "Dendroceros crispus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "crispus", location: "Neotropics (type locality Jamaica; confirmed in Brazil)"},
+    "Dendroceros granulatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "granulatus", location: "Tropical regions worldwide"},
+    "Dendroceros javanicus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "javanicus", location: "Java, Indonesia, Southeast Asia"},
+    "Dendroceros cavernosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "cavernosus", location: "India"},
+    "Dendroceros cucullatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "cucullatus", location: "India, Southeast Asia"},
+    "Dendroceros tubercularis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "tubercularis", location: "India"},
+    "Dendroceros subplanus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Dendroceros", species: "subplanus", location: "Southeast Asia"},
     
     // Genus Megaceros (4 species)
-    "Megaceros austronesophilus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "austronesophilus"},
-    "Megaceros flagellaris": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "flagellaris"},
-    "Megaceros gracilis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "gracilis"},
-    "Megaceros tjibodensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "tjibodensis"},
+    "Megaceros austronesophilus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "austronesophilus", location: "Tasmania and Macquarie Island, Australia"},
+    "Megaceros flagellaris": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "flagellaris", location: "Pantropical: West Africa, South/Southeast Asia, Australia, Pacific Islands"},
+    "Megaceros gracilis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "gracilis", location: "Eastern Australia (Queensland to Tasmania)"},
+    "Megaceros tjibodensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Megaceros", species: "tjibodensis", location: "Java, Indonesia"},
     
     // Genus Nothoceros (7 species)
-    "Nothoceros aenigmaticus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "aenigmaticus"},
-    "Nothoceros canaliculatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "canaliculatus"},
-    "Nothoceros endiviifolius": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "endiviifolius"},
-    "Nothoceros fuegiensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "fuegiensis"},
-    "Nothoceros giganteus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "giganteus"},
-    "Nothoceros schizophyllus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "schizophyllus"},
-    "Nothoceros vincentianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "vincentianus"},
+    "Nothoceros aenigmaticus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "aenigmaticus", location: "Eastern North America (Appalachian Mts.), also Mexico and high Andes"},
+    "Nothoceros canaliculatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "canaliculatus", location: "Caribbean and Central American mountains (Puerto Rico, Costa Rica)"},
+    "Nothoceros endiviifolius": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "endiviifolius", location: "Southern South America, subantarctic regions"},
+    "Nothoceros fuegiensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "fuegiensis", location: "Tierra del Fuego, southern Chile and Argentina"},
+    "Nothoceros giganteus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "giganteus", location: "New Zealand (endemic)"},
+    "Nothoceros schizophyllus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "schizophyllus", location: "Cuba and the Neotropical Americas"},
+    "Nothoceros vincentianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Nothoceros", species: "vincentianus", location: "St. Vincent, Caribbean"},
     
     // Genus Phaeomegaceros (6 species)
-    "Phaeomegaceros fimbriatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "fimbriatus"},
-    "Phaeomegaceros coriaceus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "coriaceus"},
-    "Phaeomegaceros plicatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "plicatus"},
-    "Phaeomegaceros skottsbergii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "skottsbergii"},
-    "Phaeomegaceros chiloensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "chiloensis"},
-    "Phaeomegaceros hirticalyx": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "hirticalyx"},
+    "Phaeomegaceros fimbriatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "fimbriatus", location: "Neotropics: Mexico to Bolivia (Panama, Colombia, Ecuador)"},
+    "Phaeomegaceros coriaceus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "coriaceus", location: "New Zealand"},
+    "Phaeomegaceros plicatus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "plicatus", location: "New Zealand, subantarctic islands"},
+    "Phaeomegaceros skottsbergii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "skottsbergii", location: "Juan Fernández Islands, Chile"},
+    "Phaeomegaceros chiloensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "chiloensis", location: "Chiloé Island, Chile"},
+    "Phaeomegaceros hirticalyx": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Dendrocerotales", family: "Dendrocerotaceae", genus: "Phaeomegaceros", species: "hirticalyx", location: "New Zealand"},
     
     // Genus Notothylas (5 species)
-    "Notothylas levieri": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "levieri"},
-    "Notothylas breutelii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "breutelii"},
-    "Notothylas orbicularis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "orbicularis"},
-    "Notothylas javanica": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "javanica"},
-    "Notothylas guizhouensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "guizhouensis"},
-    "Notothylas yunnanensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "yunnanensis"},
+    "Notothylas levieri": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "levieri", location: "India (recorded in Odisha, Chhattisgarh, and the eastern Himalaya)"},
+    "Notothylas breutelii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "breutelii", location: "India, Southeast Asia"},
+    "Notothylas orbicularis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "orbicularis", location: "Cosmopolitan, widespread"},
+    "Notothylas javanica": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "javanica", location: "Java, Indonesia"},
+    "Notothylas guizhouensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "guizhouensis", location: "Guizhou Province, China"},
+    "Notothylas yunnanensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Notothylas", species: "yunnanensis", location: "Yunnan Province, China"},
     
     // Genus Paraphymatoceros (5 species)
-    "Paraphymatoceros diadematus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "diadematus"},
-    "Paraphymatoceros hallii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "hallii"},
-    "Paraphymatoceros luguhuensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "luguhuensis"},
-    "Paraphymatoceros proskauerii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "proskauerii"},
-    "Paraphymatoceros pearsonii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "pearsonii"},
+    "Paraphymatoceros diadematus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "diadematus", location: "Chile (Valparaíso coast)"},
+    "Paraphymatoceros hallii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "hallii", location: "Western North America"},
+    "Paraphymatoceros luguhuensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "luguhuensis", location: "China"},
+    "Paraphymatoceros proskauerii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "proskauerii", location: "California, USA (Monterey Bay)"},
+    "Paraphymatoceros pearsonii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Paraphymatoceros", species: "pearsonii", location: "California, USA"},
     
     // Genus Phaeoceros (10 species)
-    "Phaeoceros exiguus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "exiguus"},
-    "Phaeoceros himalayensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "himalayensis"},
-    "Phaeoceros perpusillus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "perpusillus"},
-    "Phaeoceros kashyapii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "kashyapii"},
-    "Phaeoceros carolinianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "carolinianus"},
-    "Phaeoceros laevis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "laevis"},
-    "Phaeoceros mohrii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "mohrii"},
-    "Phaeoceros engelii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "engelii"},
-    "Phaeoceros evanidus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "evanidus"},
-    "Phaeoceros oreganus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "oreganus"},
-    "Phaeoceros parvulus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "parvulus"},
+    "Phaeoceros exiguus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "exiguus", location: "India"},
+    "Phaeoceros himalayensis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "himalayensis", location: "Himalayan region"},
+    "Phaeoceros perpusillus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "perpusillus", location: "India, Southeast Asia"},
+    "Phaeoceros kashyapii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "kashyapii", location: "India"},
+    "Phaeoceros carolinianus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "carolinianus", location: "Southeastern United States"},
+    "Phaeoceros laevis": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "laevis", location: "Cosmopolitan, widespread"},
+    "Phaeoceros mohrii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "mohrii", location: "Southern United States"},
+    "Phaeoceros engelii": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "engelii", location: "Central United States"},
+    "Phaeoceros evanidus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "evanidus", location: "North America"},
+    "Phaeoceros oreganus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "oreganus", location: "Oregon, Pacific Northwest"},
+    "Phaeoceros parvulus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Notothyladales", family: "Notothyladaceae", genus: "Phaeoceros", species: "parvulus", location: "India"},
     
     // Genus Phymatoceros (3 species)
-    "Phymatoceros phymatodes": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Phymatocerotales", family: "Phymatocerotaceae", genus: "Phymatoceros", species: "phymatodes"},
-    "Phymatoceros bulbiculosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Phymatocerotales", family: "Phymatocerotaceae", genus: "Phymatoceros", species: "bulbiculosus"},
-    "Phymatoceros verrucosporus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Phymatocerotales", family: "Phymatocerotaceae", genus: "Phymatoceros", species: "verrucosporus"},
+    "Phymatoceros phymatodes": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Phymatocerotales", family: "Phymatocerotaceae", genus: "Phymatoceros", species: "phymatodes", location: "North America (California coast)"},
+    "Phymatoceros bulbiculosus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Phymatocerotales", family: "Phymatocerotaceae", genus: "Phymatoceros", species: "bulbiculosus", location: "Europe (Mediterranean; type locality Portugal)"},
+    "Phymatoceros verrucosporus": {phylum: "Anthocerotophyta", class: "Anthocerotopsida", order: "Phymatocerotales", family: "Phymatocerotaceae", genus: "Phymatoceros", species: "verrucosporus", location: "China and Thailand (described 2025)"},
     
     // Genus Leiosporoceros (1 species)
-    "Leiosporoceros dussii": {phylum: "Anthocerotophyta", class: "Leiosporocerotopsida", order: "Leiosporocerotales", family: "Leiosporocerotaceae", genus: "Leiosporoceros", species: "dussii"}
+    "Leiosporoceros dussii": {phylum: "Anthocerotophyta", class: "Leiosporocerotopsida", order: "Leiosporocerotales", family: "Leiosporocerotaceae", genus: "Leiosporoceros", species: "dussii", location: "Panama and Neotropical Central/South America"}
 };
 
     let mysteryAnimal = "";
     let guesses = [];
     let gameWon = false;
+    let hintUsed = false;
+    let currentRegion = null;
+
+    // --- Region classification -------------------------------------------
+    // Each species has a free-text `location` field. We bucket those into
+    // a small set of canonical regions by keyword matching, so players can
+    // "seed" the mystery hornwort from a region of their choice. A species
+    // can belong to more than one region (e.g. "Europe, North America").
+    const REGION_KEYWORDS = {
+        "North America": ["North America", "United States", "Oregon", "Pacific Northwest"],
+        "South America": ["South America", "Chile", "Argentina", "Andes", "Tierra del Fuego", "Juan Fernández", "Chiloé", "Tropical America", "tropical Americas"],
+        "Europe": ["Europe", "Alps", "Caucasus"],
+        "Africa": ["Africa"],
+        "Asia": ["Asia", "India", "China", "Himalaya", "Yunnan", "Guizhou", "Java", "Indonesia", "Ambon"],
+        "Australia & New Zealand": ["Australia", "New Zealand", "Tasmania"],
+        "Pacific Islands": ["Pacific island", "Pacific islands", "Austronesian"],
+        "Atlantic Islands": ["Tristan da Cunha", "South Atlantic"],
+        "Caribbean": ["Caribbean", "St. Vincent"],
+        "Cosmopolitan / Worldwide": ["Cosmopolitan", "worldwide", "widespread globally"]
+    };
+
+    function classifyRegions(location) {
+        const matches = [];
+        for (const [region, keywords] of Object.entries(REGION_KEYWORDS)) {
+            if (keywords.some(kw => location.toLowerCase().includes(kw.toLowerCase()))) {
+                matches.push(region);
+            }
+        }
+        if (matches.length === 0) {
+            matches.push("Pantropical / Unspecified");
+        }
+        return matches;
+    }
+
+    // Map of region name -> list of species names found in that region
+    const regionIndex = {};
+    Object.entries(taxonomyDB).forEach(([name, data]) => {
+        classifyRegions(data.location).forEach(region => {
+            if (!regionIndex[region]) regionIndex[region] = [];
+            regionIndex[region].push(name);
+        });
+    });
+
+    function populateRegionSelect() {
+        const select = document.getElementById('regionSelect');
+        const options = ['<option value="any">🎲 Surprise me (any region)</option>'];
+        Object.keys(regionIndex).sort().forEach(region => {
+            options.push(`<option value="${region}">${region} (${regionIndex[region].length} species)</option>`);
+        });
+        select.innerHTML = options.join('');
+    }
+    // -----------------------------------------------------------------------
+
 
     const COLORS = {
         phylum: 'rgb(139, 69, 19)',
@@ -339,20 +498,46 @@
         line: 'rgb(107, 68, 35)'
     };
 
-    function initGame() {
-        const animals = Object.keys(taxonomyDB);
-        mysteryAnimal = animals[Math.floor(Math.random() * animals.length)];
+    function initGame(region) {
+        const pool = (region && regionIndex[region] && regionIndex[region].length > 0)
+            ? regionIndex[region]
+            : Object.keys(taxonomyDB);
+        currentRegion = (region && regionIndex[region]) ? region : null;
+
+        mysteryAnimal = pool[Math.floor(Math.random() * pool.length)];
         guesses = [];
         gameWon = false;
+        hintUsed = false;
         document.getElementById('guessCount').textContent = '0';
         document.getElementById('speciesCount').textContent = Object.keys(taxonomyDB).length;
-        document.getElementById('message').style.display = 'none';
         document.getElementById('newGameBtn').style.display = 'none';
         document.getElementById('guessBtn').disabled = false;
         document.getElementById('animalInput').disabled = false;
         document.getElementById('animalInput').value = '';
+        document.getElementById('hintBtn').disabled = false;
+        document.getElementById('hintBox').classList.remove('show');
+
+        const seedNote = document.getElementById('seedNote');
+        if (currentRegion) {
+            seedNote.textContent = `🌱 Mystery hornwort seeded from: ${currentRegion} (${pool.length} candidates)`;
+            document.getElementById('message').style.display = 'none';
+        } else {
+            seedNote.textContent = '';
+            document.getElementById('message').style.display = 'none';
+        }
+
         renderTree();
         console.log("Mystery:", mysteryAnimal);
+    }
+
+    function showHint() {
+        if (!hintUsed && !gameWon) {
+            hintUsed = true;
+            const location = taxonomyDB[mysteryAnimal].location;
+            document.getElementById('hintText').textContent = `This hornwort is found in: ${location}`;
+            document.getElementById('hintBox').classList.add('show');
+            document.getElementById('hintBtn').disabled = true;
+        }
     }
 
     function findCommonRank(sp1, sp2) {
@@ -530,7 +715,7 @@
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', '100%');
         svg.setAttribute('height', height);
-        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.setAttribute('viewBox', `0 0 $${width} $${height}`);
         svg.setAttribute('preserveAspectRatio', 'xMinYMid meet');
 
         // Draw the tree using the calculated layout
@@ -572,8 +757,13 @@
         
         const result = traverse(tree, 0, 50);
         
-        // Find max X and Y for SVG sizing
-        const maxX = Math.max(...nodes.map(n => n.x + 200));
+        // Find max X and Y for SVG sizing.
+        // Node box width depends on label length (see drawNode), so the
+        // rightmost edge must be computed per-node rather than assumed —
+        // otherwise long labels (e.g. the mystery placeholder, or longer
+        // genus/species names) get clipped by the viewBox.
+        const nodeWidth = (name) => Math.max(name.length * 8 + 20, 100);
+        const maxX = Math.max(...nodes.map(n => n.x + nodeWidth(n.node.name)));
         const maxY = Math.max(...nodes.map(n => n.y + 50));
         
         return { nodes, maxX, maxY };
@@ -698,8 +888,7 @@
         rect.setAttribute('filter', 'drop-shadow(2px 3px 2px rgb(0 0 0 / 0.2))');
 
         g.appendChild(rect);
-
-        // Create text
+// Create text
         const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         textEl.setAttribute('x', x + rectWidth / 2);
         textEl.setAttribute('y', y + 5);
@@ -748,9 +937,11 @@
         
         if (input === mysteryAnimal) {
             gameWon = true;
-            showMessage('🎉 Congratulations! You found ' + mysteryAnimal + ' in ' + guesses.length + ' guesses!', 'success');
+            const hintPenalty = hintUsed ? ' (hint used)' : '';
+            showMessage('🎉 Congratulations! You found ' + mysteryAnimal + ' in ' + guesses.length + ' guesses!' + hintPenalty, 'success');
             document.getElementById('guessBtn').disabled = true;
             document.getElementById('animalInput').disabled = true;
+            document.getElementById('hintBtn').disabled = true;
             document.getElementById('newGameBtn').style.display = 'block';
         } else {
             const common = findCommonRank(input, mysteryAnimal);
@@ -765,27 +956,27 @@
     }
 
     function updateSuggestions() {
-    const input = document.getElementById('animalInput').value.trim().toLowerCase();
-    const suggestionsDiv = document.getElementById('suggestions');
-    if (input.length < 2) {
-        suggestionsDiv.style.display = 'none';
-        return;
+        const input = document.getElementById('animalInput').value.trim().toLowerCase();
+        const suggestionsDiv = document.getElementById('suggestions');
+        if (input.length < 2) {
+            suggestionsDiv.style.display = 'none';
+            return;
+        }
+        
+        // Filter out species that have already been guessed
+        const matches = Object.keys(taxonomyDB).filter(name => 
+            name.toLowerCase().includes(input) && !guesses.includes(name)
+        );
+        
+        if (matches.length > 0) {
+            suggestionsDiv.innerHTML = matches.map(name => 
+                '<div class="suggestion-item" onclick="selectSuggestion(\'' + name.replace(/'/g, "\\'") + '\')">' + name + '</div>'
+            ).join('');
+            suggestionsDiv.style.display = 'block';
+        } else {
+            suggestionsDiv.style.display = 'none';
+        }
     }
-    
-    // Filter out species that have already been guessed
-    const matches = Object.keys(taxonomyDB).filter(name => 
-        name.toLowerCase().includes(input) && !guesses.includes(name)
-    );
-    
-    if (matches.length > 0) {
-        suggestionsDiv.innerHTML = matches.map(name => 
-            '<div class="suggestion-item" onclick="selectSuggestion(\'' + name.replace(/'/g, "\\'") + '\')">' + name + '</div>'
-        ).join('');
-        suggestionsDiv.style.display = 'block';
-    } else {
-        suggestionsDiv.style.display = 'none';
-    }
-}
 
     function selectSuggestion(name) {
         document.getElementById('animalInput').value = name;
@@ -793,16 +984,24 @@
     }
 
     document.getElementById('guessBtn').addEventListener('click', makeGuess);
+    document.getElementById('hintBtn').addEventListener('click', showHint);
     document.getElementById('animalInput').addEventListener('input', updateSuggestions);
     document.getElementById('animalInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') makeGuess();
     });
-    document.getElementById('newGameBtn').addEventListener('click', initGame);
+    document.getElementById('newGameBtn').addEventListener('click', () => initGame());
+    document.getElementById('seedBtn').addEventListener('click', () => {
+        const region = document.getElementById('regionSelect').value;
+        initGame(region === 'any' ? null : region);
+    });
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.input-section')) {
             document.getElementById('suggestions').style.display = 'none';
         }
     });
 
+    populateRegionSelect();
     initGame();
 </script>
+</body>
+</html>
